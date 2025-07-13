@@ -17,7 +17,8 @@ import TopSellingProducts from '../components/TopSellingProducts';
 import { io } from 'socket.io-client';
 
 const AdminDashboard = () => {
-  const { token } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth);
+const token = user?.token;
 
   const [stats, setStats] = useState({
     totalProducts: 0,

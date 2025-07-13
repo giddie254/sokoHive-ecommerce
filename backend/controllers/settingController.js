@@ -1,13 +1,8 @@
-// ============================
 // src/controllers/settingController.js
-// ============================
-
 import asyncHandler from 'express-async-handler';
 import Setting from '../models/settingModel.js';
 
-// @desc Get all settings
-// @route GET /api/admin/settings
-// @access Admin
+// ✅ Admin: Get all settings
 export const getSettings = asyncHandler(async (req, res) => {
   const settings = await Setting.find({});
   const payload = settings.reduce((acc, s) => {
@@ -17,11 +12,21 @@ export const getSettings = asyncHandler(async (req, res) => {
   res.json(payload);
 });
 
-// @desc Update settings (key-value pairs)
-// @route PUT /api/admin/settings
-// @access Admin
+// ✅ Public: Get limited public settings (used in frontend)
+export const getPublicSettings = asyncHandler(async (req, res) => {
+  const publicKeys = ['storeName', 'supportEmail', 'themeColor']; // You can add more
+  const settings = await Setting.find({ key: { $in: publicKeys } });
+
+  const payload = settings.reduce((acc, s) => {
+    acc[s.key] = s.value;
+    return acc;
+  }, {});
+  res.json(payload);
+});
+
+// ✅ Admin: Update settings
 export const updateSettings = asyncHandler(async (req, res) => {
-  const inputs = req.body; // e.g. { storeName: "SokoHive", supportEmail: "support@sokohive.com" }
+  const inputs = req.body;
   const results = [];
 
   for (const [key, value] of Object.entries(inputs)) {

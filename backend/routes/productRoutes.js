@@ -16,6 +16,7 @@ import { getRelatedProducts } from '../controllers/productController.js';
 import { adminOnly } from '../middleware/adminMiddleware.js';
 import upload from '../middleware/uploadMiddleware.js'; // 👈 Make sure this imports your multer config
 import { getFlashDeals } from '../controllers/productController.js';
+import { multerErrorHandler } from '../middleware/multerErrorHandler.js';
 
 
 

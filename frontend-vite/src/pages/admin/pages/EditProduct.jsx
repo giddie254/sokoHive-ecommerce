@@ -1,7 +1,8 @@
-// src/pages/admin/pages/EditProduct.jsx
+// ✅ Updated EditProduct.jsx - send this to: src/pages/admin/pages/EditProduct.jsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeftIcon, UploadCloudIcon } from 'lucide-react';
+import { useSelector } from 'react-redux';
 import axios from 'axios';
 
 const categories = ['sneakers', 'men', 'women', 'kids', 'sports', 'deals'];
@@ -9,6 +10,7 @@ const categories = ['sneakers', 'men', 'women', 'kids', 'sports', 'deals'];
 const EditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const token = useSelector((state) => state.auth.user?.token);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -19,7 +21,9 @@ const EditProduct = () => {
     countInStock: 0,
     images: [],
   });
+
   const [previewImages, setPreviewImages] = useState([]);
+  const [newImages, setNewImages] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,12 +51,13 @@ const EditProduct = () => {
   }, [id, navigate]);
 
   const handleChange = (e) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
-    setFormData({ ...formData, images: files });
+    setNewImages(files);
     const preview = files.map((file) => URL.createObjectURL(file));
     setPreviewImages(preview);
   };
@@ -61,22 +66,28 @@ const EditProduct = () => {
     e.preventDefault();
     const updatedData = new FormData();
 
-    Object.entries(formData).forEach(([key, value]) => {
-      if (key === 'images') {
-        value.forEach((img) => updatedData.append('images', img));
-      } else {
-        updatedData.append(key, value);
-      }
-    });
+    updatedData.append('name', formData.name);
+    updatedData.append('brand', formData.brand);
+    updatedData.append('category', formData.category);
+    updatedData.append('description', formData.description);
+    updatedData.append('price', Number(formData.price)); // ensure numeric
+    updatedData.append('countInStock', Number(formData.countInStock));
+
+    newImages.forEach((img) => updatedData.append('images', img));
 
     try {
       await axios.put(`/api/products/${id}`, updatedData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+        },
       });
+
       alert('Product updated');
       navigate('/admin/products');
     } catch (err) {
-      alert('Failed to update product');
+      console.error('Error updating product:', err?.response?.data || err.message);
+      alert('Failed to update product. Check console for more info.');
     }
   };
 
@@ -187,7 +198,7 @@ const EditProduct = () => {
           <p className="text-xs text-gray-500 mt-1">
             Uploading new files will replace old images.
           </p>
-          <div className="flex gap-2 mt-2">
+          <div className="flex gap-2 mt-2 flex-wrap">
             {previewImages.map((src, i) => (
               <img
                 key={i}

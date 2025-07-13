@@ -1,4 +1,3 @@
-// src/components/ProductCard.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
@@ -6,6 +5,7 @@ import { addItem } from '../redux/slices/cartSlice';
 import { updateWishlist } from '../redux/slices/authSlice';
 import axios from 'axios';
 import { Heart, ShoppingCart, Star } from 'lucide-react';
+import noImage from '@/assets/no-image.png'; // ✅ Local fallback image
 
 const ProductCard = ({ product }) => {
   const { user, token } = useSelector((state) => state.auth);
@@ -33,15 +33,27 @@ const ProductCard = ({ product }) => {
 
   const isInWishlist = user?.wishlist?.some((item) => item._id === product._id);
 
+  // ✅ Determine a valid image URL or fallback
+  const isValidImage = (url) =>
+    url &&
+    !url.includes('via.placeholder') &&
+    !url.includes('yourdomain.com/images/placeholder');
+
+  const imageUrl = isValidImage(product.images?.[0]) ? product.images[0] : noImage;
+
   return (
     <div className="group relative rounded-card overflow-hidden shadow-card bg-white dark:bg-background-darkSecondary hover:shadow-lg transition duration-300">
       {/* Product Image */}
       <Link to={`/product/${product._id}`}>
         <img
-          src={product.images?.[0] || '/images/placeholder.png'}
+          src={imageUrl}
           alt={product.name}
           className="w-full h-52 object-cover transition-transform duration-300 group-hover:scale-105"
           loading="lazy"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = noImage;
+          }}
         />
       </Link>
 
@@ -97,3 +109,5 @@ const ProductCard = ({ product }) => {
 };
 
 export default ProductCard;
+
+

@@ -11,16 +11,20 @@ import upload from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
+// GET /api/banners
+// POST /api/banners
 router
-  .route('/banners')
+  .route('/')
   .get(getBanners)
   .post(protect, isAdmin, upload.single('image'), createBanner);
 
+// DELETE /api/banners/:id
 router
-  .route('/banners/:id')
+  .route('/:id')
   .delete(protect, isAdmin, deleteBanner);
 
+// PUT /api/banners/:id/toggle
 router
-  .put('/banners/:id/toggle', protect, isAdmin, toggleBannerStatus);
+  .put('/:id/toggle', protect, isAdmin, toggleBannerStatus);
 
 export default router;

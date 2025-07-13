@@ -1,6 +1,5 @@
 import asyncHandler from 'express-async-handler';
 import Product from '../models/productModel.js';
-import path from 'path';
 import { logActivity } from '../utils/LogActivity.js';
 
 // @desc    Get all products with filters, search, sort, pagination
@@ -17,10 +16,10 @@ export const getProducts = asyncHandler(async (req, res) => {
   const brand = req.query.brand ? { brand: req.query.brand } : {};
 
   const sortOptions = {
-    'price_asc': { price: 1 },
-    'price_desc': { price: -1 },
-    'rating_desc': { rating: -1 },
-    'newest': { createdAt: -1 },
+    price_asc: { price: 1 },
+    price_desc: { price: -1 },
+    rating_desc: { rating: -1 },
+    newest: { createdAt: -1 },
   };
   const sort = sortOptions[req.query.sort] || { createdAt: -1 };
 
@@ -67,13 +66,19 @@ export const getProductById = asyncHandler(async (req, res) => {
   res.json(product);
 });
 
-// @desc    Create product (Admin only)
+// @desc    Create product
 export const createProduct = asyncHandler(async (req, res) => {
   const {
-    name, description, price, brand, category, countInStock, isFeatured
+    name,
+    description,
+    price,
+    brand,
+    category,
+    countInStock,
+    isFeatured,
   } = req.body;
 
-  const imagePaths = req.files?.map((file) => `/uploads/${file.filename}`) || [];
+  const imagePaths = req.files?.map((file) => file.path) || [];
 
   const product = new Product({
     name,
@@ -100,50 +105,77 @@ export const createProduct = asyncHandler(async (req, res) => {
   res.status(201).json(saved);
 });
 
-// @desc    Update product (Admin only)
+// @desc    Update product
 export const updateProduct = asyncHandler(async (req, res) => {
-  const {
-    name, description, price, brand, category, countInStock,
-    isFeatured, isFlashDeal, flashDealStart, flashDealEnd
-  } = req.body;
+  try {
+    console.log('🟡 HEADERS:', req.headers);
+    console.log('🟡 BODY:', req.body);
+    console.log('🟡 FILES:', req.files);
 
-  const product = await Product.findById(req.params.id);
-  if (!product) {
-    res.status(404);
-    throw new Error('Product not found');
+    const {
+      name,
+      description,
+      price,
+      brand,
+      category,
+      countInStock,
+      isFeatured,
+      isFlashDeal,
+      flashDealStart,
+      flashDealEnd,
+    } = req.body;
+
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      res.status(404);
+      throw new Error('Product not found');
+    }
+
+    product.name = name ?? product.name;
+    product.description = description ?? product.description;
+    product.price = price !== undefined ? Number(price) : product.price;
+    product.brand = brand ?? product.brand;
+    product.category = category ?? product.category;
+    product.countInStock = countInStock !== undefined ? Number(countInStock) : product.countInStock;
+    product.isFeatured = isFeatured !== undefined ? isFeatured === 'true' || isFeatured === true : product.isFeatured;
+    product.isFlashDeal = isFlashDeal !== undefined ? isFlashDeal === 'true' || isFlashDeal === true : product.isFlashDeal;
+
+    if (flashDealStart) product.flashDealStart = new Date(flashDealStart);
+    if (flashDealEnd) product.flashDealEnd = new Date(flashDealEnd);
+
+    if (req.files && req.files.length > 0) {
+      const imagePaths = req.files.map((file) => file.path);
+      product.images = imagePaths;
+    }
+
+    const updated = await product.save();
+
+    await logActivity({
+      action: 'Updated Product',
+      description: `Product "${updated.name}" was updated.`,
+      performedBy: req.user._id,
+      ipAddress: req.ip,
+      meta: { productId: updated._id },
+    });
+
+    res.json(updated);
+  } catch (err) {
+    console.error('🔴 updateProduct() error:', {
+      message: err.message,
+      stack: err.stack,
+      files: req.files,
+      body: req.body,
+      headers: req.headers,
+    });
+
+    res.status(500).json({
+      message: 'Internal server error',
+      error: err.message,
+    });
   }
-
-  product.name = name || product.name;
-  product.description = description || product.description;
-  product.price = price || product.price;
-  product.brand = brand || product.brand;
-  product.category = category || product.category;
-  product.countInStock = countInStock || product.countInStock;
-  product.isFeatured = isFeatured ?? product.isFeatured;
-  product.isFlashDeal = isFlashDeal ?? product.isFlashDeal;
-
-  if (flashDealStart) product.flashDealStart = new Date(flashDealStart);
-  if (flashDealEnd) product.flashDealEnd = new Date(flashDealEnd);
-
-  if (req.files?.length > 0) {
-    const imagePaths = req.files.map((file) => `/uploads/${file.filename}`);
-    product.images = imagePaths;
-  }
-
-  const updated = await product.save();
-
-  await logActivity({
-    action: 'Updated Product',
-    description: `Product "${updated.name}" was updated.`,
-    performedBy: req.user._id,
-    ipAddress: req.ip,
-    meta: { productId: updated._id },
-  });
-
-  res.json(updated);
 });
 
-// @desc    Delete product (Admin only)
+// @desc    Delete product
 export const deleteProduct = asyncHandler(async (req, res) => {
   const deleted = await Product.findByIdAndDelete(req.params.id);
   if (!deleted) {
@@ -162,37 +194,31 @@ export const deleteProduct = asyncHandler(async (req, res) => {
   res.json({ message: 'Product deleted successfully' });
 });
 
-// @desc    Update product stock level
-export const updateProductStock = async (req, res) => {
+// @desc    Update stock
+export const updateProductStock = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { quantity } = req.body;
 
-  try {
-    const product = await Product.findById(id);
-
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
-    }
-
-    product.countInStock = quantity;
-    await product.save();
-
-    await logActivity({
-      action: 'Updated Stock',
-      description: `Stock updated for product "${product.name}" to ${quantity}.`,
-      performedBy: req.user._id,
-      ipAddress: req.ip,
-      meta: { productId: product._id },
-    });
-
-    res.status(200).json({ message: 'Stock updated', product });
-  } catch (error) {
-    console.error('Error updating stock:', error);
-    res.status(500).json({ message: 'Server error' });
+  const product = await Product.findById(id);
+  if (!product) {
+    return res.status(404).json({ message: 'Product not found' });
   }
-};
 
-// @desc    Add or update a review
+  product.countInStock = quantity;
+  await product.save();
+
+  await logActivity({
+    action: 'Updated Stock',
+    description: `Stock updated for product "${product.name}" to ${quantity}.`,
+    performedBy: req.user._id,
+    ipAddress: req.ip,
+    meta: { productId: product._id },
+  });
+
+  res.status(200).json({ message: 'Stock updated', product });
+});
+
+// @desc    Add review
 export const addReview = asyncHandler(async (req, res) => {
   const { rating, comment } = req.body;
   const product = await Product.findById(req.params.id).populate('reviews.user', 'name');
@@ -224,7 +250,7 @@ export const addReview = asyncHandler(async (req, res) => {
   res.status(201).json({ message: 'Review submitted', review: product.reviews[0] });
 });
 
-// @desc    Delete a review (Admin only)
+// @desc    Delete review
 export const deleteReview = asyncHandler(async (req, res) => {
   const { productId, reviewId } = req.params;
   const product = await Product.findById(productId);
@@ -234,10 +260,7 @@ export const deleteReview = asyncHandler(async (req, res) => {
     throw new Error('Product not found');
   }
 
-  product.reviews = product.reviews.filter(
-    (r) => r._id.toString() !== reviewId
-  );
-
+  product.reviews = product.reviews.filter((r) => r._id.toString() !== reviewId);
   await product.updateRating();
 
   await logActivity({
@@ -251,10 +274,9 @@ export const deleteReview = asyncHandler(async (req, res) => {
   res.json({ message: 'Review deleted' });
 });
 
-// @desc    Get related products
+// @desc    Related products
 export const getRelatedProducts = asyncHandler(async (req, res) => {
   const current = await Product.findById(req.params.id);
-
   if (!current) {
     res.status(404);
     throw new Error('Product not found');
@@ -267,3 +289,10 @@ export const getRelatedProducts = asyncHandler(async (req, res) => {
 
   res.json({ products: related });
 });
+
+
+
+
+
+
+

@@ -21,12 +21,16 @@ const ShopPage = () => {
     const fetchData = async () => {
       try {
         const { data } = await axios.get('/api/products');
-        setProducts(data);
-        setFiltered(data);
-        setCategories([...new Set(data.map((p) => p.category))]);
-        setBrands([...new Set(data.map((p) => p.brand))]);
+        const productList = Array.isArray(data) ? data : data.products || [];
+
+        setProducts(productList);
+        setFiltered(productList);
+        setCategories([...new Set(productList.map((p) => p.category))]);
+        setBrands([...new Set(productList.map((p) => p.brand))]);
       } catch (err) {
         console.error('Error fetching products:', err);
+        setProducts([]);
+        setFiltered([]);
       } finally {
         setLoading(false);
       }
@@ -36,12 +40,14 @@ const ShopPage = () => {
 
   useEffect(() => {
     let temp = [...products];
+
     if (selectedCats.length > 0) {
       temp = temp.filter((p) => selectedCats.includes(p.category));
     }
     if (selectedBrands.length > 0) {
       temp = temp.filter((p) => selectedBrands.includes(p.brand));
     }
+
     temp = temp.filter((p) => p.price <= maxPrice);
 
     switch (sort) {
@@ -136,7 +142,9 @@ const ShopPage = () => {
               onChange={(e) => setMaxPrice(Number(e.target.value))}
               className="w-full accent-primary"
             />
-            <p className="text-sm mt-1">Up to: <strong>KSh {maxPrice.toLocaleString()}</strong></p>
+            <p className="text-sm mt-1">
+              Up to: <strong>KSh {maxPrice.toLocaleString()}</strong>
+            </p>
           </div>
 
           <button
@@ -190,24 +198,22 @@ const ShopPage = () => {
 
           {/* PRODUCT GRID */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {loading
-              ? Array.from({ length: 8 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-60 bg-gray-100 dark:bg-background-darkSecondary rounded animate-pulse"
-                  ></div>
-                ))
-              : filtered.length === 0
-              ? (
-                  <p className="col-span-full text-center text-gray-500 dark:text-text-darkSecondary">
-                    No products match your filters.
-                  </p>
-                )
-              : (
-                  filtered.map((product) => (
-                    <ProductCard key={product._id} product={product} />
-                  ))
-                )}
+            {loading ? (
+              Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-60 bg-gray-100 dark:bg-background-darkSecondary rounded animate-pulse"
+                ></div>
+              ))
+            ) : filtered.length === 0 ? (
+              <p className="col-span-full text-center text-gray-500 dark:text-text-darkSecondary">
+                No products match your filters.
+              </p>
+            ) : (
+              filtered.map((product) => (
+                <ProductCard key={product._id} product={product} />
+              ))
+            )}
           </div>
         </main>
       </div>
@@ -216,7 +222,3 @@ const ShopPage = () => {
 };
 
 export default ShopPage;
-
-
-
-        

@@ -1,4 +1,3 @@
-// src/hooks/useSettings.js
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
@@ -9,10 +8,11 @@ export const useSettings = () => {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const { data } = await axios.get('/api/admin/settings');
+        // fetch from new public endpoint
+      const { data } = await axios.get('/api/public/settings');
         setSettings(data);
       } catch (error) {
-        console.warn('Admin settings not available. Falling back to empty settings.');
+        console.warn('Public settings not available. Falling back to empty settings.');
         setSettings({});
       } finally {
         setLoading(false);
@@ -24,4 +24,3 @@ export const useSettings = () => {
 
   return { settings, loading };
 };
-

@@ -9,7 +9,10 @@ export const protect = async (req, res, next) => {
     token = req.headers.authorization.split(' ')[1];
   }
 
-  if (!token) return res.status(401).json({ message: 'Not authorized, no token' });
+  if (!token) {
+    req.user = null; // ✅ allow public access
+    return next();
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -27,4 +30,3 @@ export const isAdmin = (req, res, next) => {
     res.status(403).json({ message: 'Not authorized as an admin' });
   }
 };
-

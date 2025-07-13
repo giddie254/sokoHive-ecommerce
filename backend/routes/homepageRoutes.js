@@ -19,7 +19,7 @@ router.put('/sections', protect, isAdmin, updateSections);
 router.post('/sections/seed', protect, isAdmin, seedSections);
 
 // Homepage content endpoints
-router.get('/homepage', getHomepageData);
+router.get('/', getHomepageData); 
 router.get('/testimonials', getTestimonials);
 router.get('/categories/featured', getFeaturedCategories);
 

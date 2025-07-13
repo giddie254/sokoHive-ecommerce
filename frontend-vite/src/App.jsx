@@ -14,7 +14,10 @@ import WishlistPage from './pages/WishlistPage';
 import OrderDetailsPage from './pages/OrderDetailsPage';
 import MyOrdersPage from './pages/MyOrdersPage';
 import EditProfilePage from './pages/EditProfilePage';
-
+import HelpPage from './pages/HelpPage';
+import ShippingPage from './pages/shippingPage';
+import ReturnsPage from './pages/ReturnsPage';
+import ContactPage from './pages/ContactPage';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/pages/AdminDashboard';
@@ -59,6 +62,10 @@ const App = () => {
         <Route path="/order/:id" element={<OrderDetailsPage />} />
         <Route path="/my-orders" element={<MyOrdersPage />} />
         <Route path="/profile/edit" element={<EditProfilePage />} />
+        <Route path="/help" element={<HelpPage />} />
+        <Route path="/shipping" element={<ShippingPage />} />
+        <Route path="/returns" element={<ReturnsPage />} />
+        <Route path="/contact" element={<ContactPage />} />
       </Route>
 
       {/* Admin Routes */}

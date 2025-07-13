@@ -29,6 +29,7 @@ import homepageRoutes from './routes/homepageRoutes.js';
 import settingRoutes from './routes/settingRoutes.js';
 import activityLogRoutes from './routes/activityLogRoutes.js';
 import bannerRoutes from './routes/bannerRoutes.js';
+import publicSettingsRoutes from './routes/publicSettingsRoutes.js';
 
 // Error handling
 import { notFound, errorHandler } from './utils/errorHandler.js';
@@ -63,6 +64,7 @@ app.use('/api/homepage', homepageRoutes);
 app.use('/api/admin/settings', settingRoutes);
 app.use('/api/admin/activity-logs', activityLogRoutes);
 app.use('/api/banners', bannerRoutes);
+app.use('/api/public', publicSettingsRoutes);
 
 app.get('/', (req, res) => {
   res.send('API is running...');

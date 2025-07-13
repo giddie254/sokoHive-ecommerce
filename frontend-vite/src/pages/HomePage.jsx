@@ -1,4 +1,3 @@
-// src/pages/HomePage.jsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
@@ -13,7 +12,6 @@ const CountdownTimer = ({ endTime }) => {
     const now = new Date();
     const difference = new Date(endTime) - now;
     if (difference <= 0) return 'Deal ended';
-
     const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
     const minutes = Math.floor((difference / (1000 * 60)) % 60);
     const seconds = Math.floor((difference / 1000) % 60);
@@ -40,7 +38,7 @@ const BannerCarousel = () => {
         const { data } = await axios.get('/api/banners');
         setBanners(data.filter((b) => b.isActive));
       } catch (err) {
-        console.error('Failed to fetch banners:', err.message);
+        console.warn('Banners not available:', err.message);
       }
     };
     fetchBanners();
@@ -120,27 +118,21 @@ const HomePage = () => {
       try {
         const [
           featuredRes,
-          settingsRes,
-          testimonialsRes,
-          categoriesRes,
-          flashDealsRes,
-          couponRes
+          homepageRes,
+          couponRes,
         ] = await Promise.all([
           axios.get('/api/products/featured'),
-          axios.get('/api/admin/settings'),
-          axios.get('/api/homepage/testimonials'),
-          axios.get('/api/homepage/categories/featured'),
-          axios.get('/api/products/flash-deals'),
-          axios.get('/api/coupons/active')
+          axios.get('/api/homepage'),
+          axios.get('/api/coupons/active'),
         ]);
         setProducts(featuredRes.data.products || []);
-        setSettings(settingsRes.data || {});
-        setTestimonials(testimonialsRes.data || []);
-        setFeaturedCategories(categoriesRes.data || []);
-        setFlashDeals(flashDealsRes.data || []);
+        setSettings(homepageRes.data.settings || {});
+        setTestimonials(homepageRes.data.testimonials || []);
+        setFeaturedCategories(homepageRes.data.featuredCategories || []);
+        setFlashDeals(homepageRes.data.flashDeals || []);
         setActiveCoupon(couponRes.data || null);
       } catch (err) {
-        console.error('Homepage data fetch failed:', err);
+        console.error('Homepage data fetch failed:', err.message);
       }
     };
     fetchData();
@@ -151,7 +143,7 @@ const HomePage = () => {
       <div className="px-6 md:px-20 pt-6">
         {activeCoupon && (
           <div className="bg-orange-100 text-orange-800 font-semibold text-center py-3 mb-4 rounded-lg shadow">
-            🎁 Use code <span className="font-bold">{activeCoupon.code}</span> to get {activeCoupon.discount}% off! Limited time only.
+            🎁 Use code <span className="font-bold">{activeCoupon.code}</span> to get {activeCoupon.discount}% off!
           </div>
         )}
         <BannerCarousel />
@@ -180,7 +172,7 @@ const HomePage = () => {
                       {product.name}
                     </h3>
                     <p className="text-sm text-red-600 dark:text-red-400 mt-1">
-                      KSh {product.price.toLocaleString()}{' '}
+                      KSh {product.price.toLocaleString()}
                       {product.originalPrice && (
                         <span className="line-through text-xs text-secondary ml-2">
                           KSh {product.originalPrice.toLocaleString()}
@@ -203,6 +195,3 @@ const HomePage = () => {
 };
 
 export default HomePage;
-
-
-

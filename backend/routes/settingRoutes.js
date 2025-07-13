@@ -1,21 +1,27 @@
-// ============================
-// src/routes/settingRoutes.js
-// ============================
-
+// backend/routes/settingRoutes.js
 import express from 'express';
 import { protect, isAdmin } from '../middleware/authMiddleware.js';
-import { getSettings, updateSettings } from '../controllers/settingController.js';
+import {
+  getSettings,
+  updateSettings,
+  getPublicSettings,
+} from '../controllers/settingController.js';
 
 const router = express.Router();
 
-// All routes below require admin authentication
-router.use(protect, isAdmin);
+// ✅ Truly public route
+router.get('/public', getPublicSettings);
 
-// @route GET /api/admin/settings
-router.get('/', getSettings);
-
-// @route PUT /api/admin/settings
-router.put('/', updateSettings);
+// ✅ Admin-only routes
+router.get('/', protect, isAdmin, getSettings);
+router.put('/', protect, isAdmin, updateSettings);
 
 export default router;
+
+
+
+
+
+
+
 

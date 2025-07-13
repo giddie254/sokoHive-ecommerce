@@ -67,9 +67,17 @@ export const loginUser = asyncHandler(async (req, res) => {
 });
 
 // @desc    Get user profile
-// @route   GET /api/users/profile
+// @route   GET /api/auth/profile
 export const getProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id).select('-password');
+  const user = await User.findById(req.user._id)
+    .select('-password')
+    .populate('wishlist', '-reviews -createdAt -updatedAt -__v'); // ✅ Populating wishlist with product details
+
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+
   res.json(user);
 });
 
@@ -136,3 +144,4 @@ export const deleteUser = asyncHandler(async (req, res) => {
 
   res.json({ message: 'User removed' });
 });
+
